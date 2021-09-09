@@ -10,26 +10,32 @@ export default function QuestionField() {
     sys_reply_text: String,
     data: {},
   });
-
-  const [ttsdata, setTTSData] = useState();//get audio array
+  const [loading, setLoading] = useState(true);
   const [text_input, settext_input] = useState("");// get usetinput
-
-
   function oninputChange(event) {
     settext_input(event.target.value);
   }
 
-  function onSpeakClick() {
+  async function getTTSData() {
     var key = {
       text_input: text_input,
       lang: 'ch',
     }, url = "http://35.224.193.144:19999/tts_api/";
-    const apidata = axios.post(url, qs.stringify(key));//Connect API
-    apidata.then(res => setTTSData(res.data['wav_array']))//Set Data to useState
-      .catch(err => console.error(err));
+    let apidata = await axios.post(url, qs.stringify(key));//Connect API
+    /*setTTSData(apidata.data);
+    console.log(ttsdata) ;*/
+    let res = apidata.data['wav_array'];
+    audiobuffermaker(res);
+  }
 
-    var floatttsdata = new Float32Array(JSON.parse(ttsdata));
-    console.log(floatttsdata);
+  function onSpeakClick() {
+    getTTSData();
+  }
+
+  function audiobuffermaker(data) {
+
+    var floatttsdata = new Float32Array(JSON.parse(data));
+    //console.log(floatttsdata);
     //make useState data to Float32Array
 
     let AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -52,14 +58,11 @@ export default function QuestionField() {
         //Set Float32Array Audio Data to Audiobuffer
       }
     }
-
     var blob = bufferToWave(myArrayBuffer, frameCount);
     var audio = document.getElementById('AudioPlay')
     audio.style.display = "block";
     audio.src = URL.createObjectURL(blob);
-
   }
-
   function bufferToWave(abuffer, len) {//make Audiobuffer to .wave
     var numOfChan = abuffer.numberOfChannels,
       length = len * numOfChan * 2 + 44,
@@ -153,7 +156,6 @@ export default function QuestionField() {
   useEffect(() => {
     sendQuestion();
   }, [sys_data.text]);
-
   return (
     <Card className="card-margin">
       <Card.Body>
